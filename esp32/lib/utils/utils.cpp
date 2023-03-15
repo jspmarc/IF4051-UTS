@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "../../include/constants.h"
 #include <Arduino.h>
-#include <WiFiNINA.h>
+#include <WiFi.h>
 
 void wifi_setup() {
 	Serial.print("Setting up Wi-Fi.");
@@ -50,6 +50,7 @@ bool mqtt_publish(PubSubClient &client, uint8_t led_frequency) {
 void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) {
 	Serial.printf("Message from %s: ", topic);
 	for (int i = 0; i < length; i++) {
+		delay(2000);
 		Serial.print((char) payload[i]);
 	}
 	Serial.println();

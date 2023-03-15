@@ -5,8 +5,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <PubSubClient.h>>
-#include <WiFiNINA.h>
+#include <PubSubClient.h>
+#include <WiFi.h>
 
 void wifi_setup();
 
