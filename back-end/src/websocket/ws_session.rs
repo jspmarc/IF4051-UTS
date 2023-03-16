@@ -1,6 +1,7 @@
 use crate::entity::{constants, State};
 use actix::{Actor, ActorContext, AsyncContext, StreamHandler};
 use actix_web_actors::ws;
+use log::info;
 use std::{sync::Arc, time::Instant};
 
 type WsResult = Result<ws::Message, ws::ProtocolError>;
@@ -39,14 +40,14 @@ impl Actor for WsSession {
         let mut counter = self.app_state.counter.lock().unwrap();
         *counter += 1;
 
-        println!("A session is started");
+        info!("A session is STARTED | counter: {}", counter);
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         let mut counter = self.app_state.counter.lock().unwrap();
         *counter -= 1;
 
-        println!("A session is stopped");
+        info!("A session is STOPPED | counter: {}", counter);
     }
 }
 
@@ -56,15 +57,14 @@ impl StreamHandler<WsResult> for WsSession {
             Ok(ws::Message::Ping(msg)) => {
                 self.heartbeat_instant = Instant::now();
                 ctx.pong(&msg);
-            },
+            }
             Ok(ws::Message::Pong(_)) => {
                 self.heartbeat_instant = Instant::now();
-            },
+            }
             Ok(ws::Message::Text(text)) => {
-                let counter = (*self.app_state.counter).lock().unwrap();
-                println!("Got message: {} | counter: {}", text, counter);
+                info!("Got message: {}", text.trim());
                 ctx.text(text);
-            },
+            }
             // ignore continuation, binary, and nop messages
             Ok(ws::Message::Continuation(_))
             | Ok(ws::Message::Nop)

@@ -1,4 +1,4 @@
-use actix_web::{web, Responder, get, HttpServer, App, HttpRequest, HttpResponse, http::StatusCode};
+use actix_web::{web, Responder, get, HttpServer, App, HttpRequest, HttpResponse, http::StatusCode, middleware::Logger};
 use actix_web_actors::ws;
 use std::sync::{Mutex, Arc};
 use entity::State;
@@ -20,6 +20,9 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
+    ::std::env::set_var("RUST_LOG", "INFO");
+    env_logger::init();
+
     let state = web::Data::new(State {
         counter: Arc::new(Mutex::new(0)),
     });
@@ -27,6 +30,7 @@ async fn main() -> Result<(), std::io::Error> {
     HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
+            .wrap(Logger::default())
             .service(hello)
             .service(ws_handler)
     })
