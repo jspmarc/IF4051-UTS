@@ -1,5 +1,5 @@
-use crate::entity::constants;
-use crate::websocket::server::WsServer;
+use crate::entity::{constants, Error};
+use crate::websocket::server::{requests::StatusRequest, WsServer};
 use actix::{
     fut, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, ContextFutureSpawner,
     StreamHandler, WrapFuture,
@@ -24,7 +24,9 @@ impl WsSession {
             heartbeat_instant: Instant::now(),
         }
     }
+}
 
+impl WsSession {
     pub fn start_heartbeat(&self, ctx: &mut <Self as Actor>::Context) {
         ctx.run_interval(constants::WS_HEARTBEAT_INTERVAL, |actor, ctx| {
             let hb = actor.heartbeat_instant;
@@ -44,7 +46,7 @@ impl Actor for WsSession {
         self.start_heartbeat(ctx);
 
         self.server
-            .send(server::Connect {})
+            .send(server::requests::ConnectRequest {})
             .into_actor(self)
             .then(|res, _act, ctx| {
                 match res {
@@ -61,7 +63,7 @@ impl Actor for WsSession {
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
-        self.server.do_send(server::Disconnect {})
+        self.server.do_send(server::requests::DisconnectRequest {})
     }
 }
 
@@ -76,8 +78,52 @@ impl StreamHandler<WsResult> for WsSession {
                 self.heartbeat_instant = Instant::now();
             }
             Ok(ws::Message::Text(text)) => {
-                info!("Got message: {}", text.trim());
-                ctx.text(text);
+                let text = text.trim();
+                let server = &self.server;
+                match text.split_once(' ') {
+                    // status [device]
+                    // [device]: ac | light | all
+                    Some(("status", args)) => {
+                        info!("Got topic status | args: {:?}", args);
+                        let msg = match StatusRequest::from_string(args) {
+                            Ok(msg) => msg,
+                            Err(err) => return ctx.text(err.to_string()),
+                        };
+                        server
+                            .send(msg)
+                            .into_actor(self)
+                            .then(|res, _act, ctx| {
+                                match res {
+                                    Ok(res) => ctx.text(res.to_string()),
+                                    Err(_) => {
+                                        error!("Can't send message to server");
+                                        ctx.stop();
+                                    }
+                                };
+
+                                fut::ready(())
+                            })
+                            .wait(ctx)
+                    }
+                    // status [device]:[state]
+                    // [device]: ac | light | all
+                    // [state]: on | off
+                    Some(("switch", args)) => {
+                        info!("Got topic switch | args: {:?}", args);
+                        ctx.text(args);
+                    }
+                    // timer [device]:[state]:[time]
+                    // [device]: ac | light | all
+                    // [state]: on | off
+                    // [time]: [number]
+                    // [number]: how many seconds until turned on or off
+                    Some(("timer", args)) => {
+                        info!("Got topic timer");
+                        ctx.text(args);
+                    }
+                    Some((cmd, _)) => ctx.text(Error::UnknownCommand(cmd.to_owned()).to_string()),
+                    _ => ctx.text(Error::BadMessage.to_string()),
+                }
             }
             // ignore continuation, binary, and nop messages
             Ok(ws::Message::Continuation(_))

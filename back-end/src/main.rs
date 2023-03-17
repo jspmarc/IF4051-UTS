@@ -25,7 +25,8 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
-    ::std::env::set_var("RUST_LOG", "actix_web=debug,INFO");
+    // ::std::env::set_var("RUST_LOG", "actix_web=debug,INFO");
+    ::std::env::set_var("RUST_LOG", "INFO");
     env_logger::init();
 
     let ws_server = WsServer::new().start();

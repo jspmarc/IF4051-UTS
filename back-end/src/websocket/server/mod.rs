@@ -1,5 +1,4 @@
-pub use structs::*;
 pub use ws_server::WsServer;
 
-mod structs;
+pub mod requests;
 mod ws_server;

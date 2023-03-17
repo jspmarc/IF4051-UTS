@@ -42,4 +42,12 @@ impl State {
             light_timer: Arc::new(Mutex::new(now)),
         }
     }
+
+    pub fn is_ac_on(&self) -> &AtomicBool {
+        self.is_ac_on.as_ref()
+    }
+
+    pub fn is_light_on(&self) -> &AtomicBool {
+        self.is_light_on.as_ref()
+    }
 }
