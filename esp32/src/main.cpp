@@ -1,14 +1,14 @@
 #include <Arduino.h>
 #include <constants.h>
 #include <PubSubClient.h>
-#include <utils.h>
+#include <utils.hpp>
 #include <WiFi.h>
 
 uint64_t prev_time = 0;
 uint64_t prev_sec = 0;
 uint16_t led_frequency = 10;
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+WiFiClient wifi_client;
+PubSubClient mqtt_client(wifi_client);
 
 void setup() {
 	Serial.begin(115200);
@@ -19,16 +19,16 @@ void setup() {
 	delay(500);
 	wifi_setup();
 	delay(500);
-	mqtt_setup(mqttClient);
+	mqtt_setup(mqtt_client);
 	delay(500);
 	ledcWrite(LED_CHANNEL, led_frequency);
 }
 
 void loop() {
-	if (!mqttClient.connected()) {
-		mqtt_reconnect(mqttClient);
+	if (!mqtt_client.connected()) {
+		mqtt_reconnect(mqtt_client);
 	}
-	mqttClient.loop();
+	mqtt_client.loop();
 
 	uint64_t now = millis();
 	uint64_t now_sec = now / 1000;
@@ -45,7 +45,7 @@ void loop() {
 
 	if (prev_sec != now_sec && now_sec % 5 == 0) {
 		Serial.printf("%d    |    ", now);
-		if (mqtt_publish(mqttClient, led_frequency)) {
+		if (mqtt_publish(mqtt_client, led_frequency)) {
 			Serial.println("Published data");
 		} else {
 			Serial.println("Can't publish data");

@@ -2,11 +2,11 @@
 // Created by josep on 21/02/23.
 //
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
-#include <PubSubClient.h>
-#include <WiFi.h>
+#include <PubSubClient.h>>
+#include <WiFiNINA.h>
 
 void wifi_setup();
 
@@ -17,4 +17,4 @@ void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length);
 
 void handle_button_pressed(uint16_t *led_frequency);
 
-#endif//UTILS_H
+#endif//UTILS_HPP

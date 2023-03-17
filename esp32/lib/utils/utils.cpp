@@ -2,7 +2,7 @@
 // Created by josep on 21/02/23.
 //
 
-#include "utils.h"
+#include "utils.hpp"
 #include "../../include/constants.h"
 #include <Arduino.h>
 #include <WiFi.h>
