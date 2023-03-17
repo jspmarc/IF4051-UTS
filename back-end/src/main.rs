@@ -1,6 +1,5 @@
 use actix_web::{web, Responder, get, HttpServer, App, HttpRequest, HttpResponse, http::StatusCode, middleware::Logger};
 use actix_web_actors::ws;
-use std::sync::{Mutex, Arc};
 use entity::State;
 use websocket::WsSession;
 
@@ -23,9 +22,7 @@ async fn main() -> Result<(), std::io::Error> {
     ::std::env::set_var("RUST_LOG", "INFO");
     env_logger::init();
 
-    let state = web::Data::new(State {
-        counter: Arc::new(Mutex::new(0)),
-    });
+    let state = web::Data::new(State::new());
 
     HttpServer::new(move || {
         App::new()
