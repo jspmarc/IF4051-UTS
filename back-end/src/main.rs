@@ -1,4 +1,4 @@
-use actix::{Addr, Actor};
+use actix::{Actor, Addr};
 use actix_web::{
     get, http::StatusCode, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer,
     Responder,
