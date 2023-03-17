@@ -1,20 +1,26 @@
-use crate::entity::{constants, State};
-use actix::{Actor, ActorContext, AsyncContext, StreamHandler};
+use crate::entity::constants;
+use crate::websocket::server::WsServer;
+use actix::{
+    fut, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, ContextFutureSpawner,
+    StreamHandler, WrapFuture,
+};
 use actix_web_actors::ws;
-use log::info;
-use std::{sync::Arc, time::Instant};
+use log::{error, info};
+use std::time::Instant;
+
+use super::server;
 
 type WsResult = Result<ws::Message, ws::ProtocolError>;
 
 pub struct WsSession {
-    app_state: Arc<State>,
+    server: Addr<WsServer>,
     heartbeat_instant: Instant,
 }
 
 impl WsSession {
-    pub fn new(state: Arc<State>) -> Self {
+    pub fn new(server: &Addr<WsServer>) -> Self {
         WsSession {
-            app_state: state.clone(),
+            server: server.clone(),
             heartbeat_instant: Instant::now(),
         }
     }
@@ -37,17 +43,25 @@ impl Actor for WsSession {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.start_heartbeat(ctx);
 
-        let mut counter = self.app_state.counter.lock().unwrap();
-        *counter += 1;
+        self.server
+            .send(server::Connect {})
+            .into_actor(self)
+            .then(|res, _act, ctx| {
+                match res {
+                    Ok(_) => (),
+                    _ => {
+                        error!("Can't connect to server");
+                        ctx.stop();
+                    }
+                };
 
-        info!("A session is STARTED | counter: {}", counter);
+                fut::ready(())
+            })
+            .wait(ctx)
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
-        let mut counter = self.app_state.counter.lock().unwrap();
-        *counter -= 1;
-
-        info!("A session is STOPPED | counter: {}", counter);
+        self.server.do_send(server::Disconnect {})
     }
 }
 

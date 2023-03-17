@@ -1,15 +1,21 @@
-use actix_web::{web, Responder, get, HttpServer, App, HttpRequest, HttpResponse, http::StatusCode, middleware::Logger};
+use actix::{Addr, Actor};
+use actix_web::{
+    get, http::StatusCode, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer,
+    Responder,
+};
 use actix_web_actors::ws;
-use entity::State;
-use websocket::WsSession;
+use websocket::{server::WsServer, WsSession};
 
 mod entity;
 mod websocket;
 
 #[get("/ws")]
-async fn ws_handler(req: HttpRequest, stream: web::Payload, state: web::Data<State>) -> impl Responder {
-    let state = state.into_inner();
-    ws::start(WsSession::new(state), &req, stream)
+async fn ws_handler(
+    req: HttpRequest,
+    stream: web::Payload,
+    server: web::Data<Addr<WsServer>>,
+) -> impl Responder {
+    ws::start(WsSession::new(&server), &req, stream)
 }
 
 #[get("/")]
@@ -19,14 +25,14 @@ async fn hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
-    ::std::env::set_var("RUST_LOG", "INFO");
+    ::std::env::set_var("RUST_LOG", "actix_web=debug,INFO");
     env_logger::init();
 
-    let state = web::Data::new(State::new());
+    let ws_server = WsServer::new().start();
 
     HttpServer::new(move || {
         App::new()
-            .app_data(state.clone())
+            .app_data(web::Data::new(ws_server.clone()))
             .wrap(Logger::default())
             .service(hello)
             .service(ws_handler)
