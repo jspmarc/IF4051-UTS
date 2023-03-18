@@ -16,6 +16,7 @@ impl Handler<SwitchRequest> for WsServer {
         let mut response: SwitchResponse = vec![];
 
         let devices = msg.get_devices();
+        let is_on = msg.is_on();
 
         for device in devices {
             let resp = match device {
@@ -23,7 +24,7 @@ impl Handler<SwitchRequest> for WsServer {
                 Device::Light => state.get_light_state(),
             };
             let mut device_state = resp.write().unwrap();
-            if msg.is_on() {
+            if is_on {
                 device_state.turn_on()
             } else {
                 device_state.turn_off()

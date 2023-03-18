@@ -18,5 +18,4 @@ pub type StatusResponse = Vec<StatusResponseElement>;
 
 pub type SwitchResponse = StatusResponse;
 
-#[derive(Serialize)]
-pub struct TimerResponse;
+pub type TimerResponse = StatusResponse;

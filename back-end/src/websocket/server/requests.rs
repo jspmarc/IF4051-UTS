@@ -115,4 +115,60 @@ impl SwitchRequest {
 
 #[derive(Message)]
 #[rtype(TimerResponse)]
-pub struct TimerRequest;
+pub struct TimerRequest {
+    devices: Vec<Device>,
+    is_turn_on: bool,
+    timer_trigger_timestamp: u64,
+}
+
+impl TimerRequest {
+    pub fn parse_args_string(args: &str) -> Result<Self, Error> {
+        let args = split_str!(args, ' ');
+        validate_args!(args, 3);
+        let devices_args = split_str!(args[0], ':', unique);
+        let is_turn_on = match args[1].to_lowercase().trim() {
+            "on" => true,
+            "off" => false,
+            other => {
+                return Err(Error::BadMessageWithReason(format!(
+                    "expected: on | off; given: {}",
+                    other
+                )))
+            }
+        };
+        let timer_trigger_timestamp = match args[2].parse::<u64>() {
+            Ok(sec) => sec,
+            Err(err) => return Err(Error::BadMessageWithReason(err.to_string())),
+        };
+
+        let mut devices: Vec<Device> = vec![];
+
+        for device in devices_args {
+            let device = match device.to_lowercase().trim() {
+                "ac" => Device::Ac,
+                "light" => Device::Light,
+                dev => return Err(Error::UnknownDevice(dev.to_string())),
+            };
+
+            devices.push(device);
+        }
+
+        Ok(Self {
+            devices,
+            is_turn_on,
+            timer_trigger_timestamp,
+        })
+    }
+
+    pub fn get_devices(&self) -> &Vec<Device> {
+        &self.devices
+    }
+
+    pub fn is_on(&self) -> bool {
+        self.is_turn_on
+    }
+
+    pub fn get_timer_trigger_timestamp(&self) -> u64 {
+        self.timer_trigger_timestamp
+    }
+}
