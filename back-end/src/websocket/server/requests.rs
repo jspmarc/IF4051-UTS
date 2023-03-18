@@ -3,10 +3,15 @@ use crate::{
     websocket::responses::{StatusResponse, SwitchResponse, TimerResponse},
 };
 use actix::Message;
+use std::collections::HashSet;
 
 macro_rules! split_str {
     ($s:expr, $delim:expr) => {
         $s.split($delim).collect::<Vec<&str>>()
+    };
+
+    ($s:expr, $delim:expr, unique) => {
+        $s.split($delim).collect::<HashSet<&str>>()
     };
 }
 
@@ -36,7 +41,7 @@ impl StatusRequest {
     pub fn parse_args_string(args: &str) -> Result<Self, Error> {
         let args = split_str!(args, ' ');
         validate_args!(args, 1);
-        let args = split_str!(args[0], ':');
+        let args = split_str!(args[0], ':', unique);
 
         let mut devices: Vec<Device> = vec![];
 
@@ -69,7 +74,7 @@ impl SwitchRequest {
     pub fn parse_args_string(args: &str) -> Result<Self, Error> {
         let args = split_str!(args, ' ');
         validate_args!(args, 2);
-        let devices_args = split_str!(args[0], ':');
+        let devices_args = split_str!(args[0], ':', unique);
         let is_turn_on = match args[1].to_lowercase().trim() {
             "on" => true,
             "off" => false,
