@@ -8,7 +8,7 @@ use actix_web_actors::ws;
 use log::{error, info};
 use std::time::Instant;
 
-use super::server;
+use crate::websocket::server;
 
 type WsResult = Result<ws::Message, ws::ProtocolError>;
 
@@ -82,7 +82,7 @@ impl StreamHandler<WsResult> for WsSession {
                 let server = &self.server;
                 match text.split_once(' ') {
                     // status [device]
-                    // [device]: ac | light | all
+                    // [device]: ac | light | :[device]
                     Some(("status", args)) => {
                         info!("Got topic status | args: {:?}", args);
                         let msg = match StatusRequest::from_string(args) {
@@ -94,7 +94,7 @@ impl StreamHandler<WsResult> for WsSession {
                             .into_actor(self)
                             .then(|res, _act, ctx| {
                                 match res {
-                                    Ok(res) => ctx.text(res.to_string()),
+                                    Ok(res) => ctx.text(serde_json::to_string(&res).unwrap()),
                                     Err(_) => {
                                         error!("Can't send message to server");
                                         ctx.stop();
@@ -106,14 +106,14 @@ impl StreamHandler<WsResult> for WsSession {
                             .wait(ctx)
                     }
                     // status [device]:[state]
-                    // [device]: ac | light | all
+                    // [device]: ac | light | :[device]
                     // [state]: on | off
                     Some(("switch", args)) => {
                         info!("Got topic switch | args: {:?}", args);
                         ctx.text(args);
                     }
                     // timer [device]:[state]:[time]
-                    // [device]: ac | light | all
+                    // [device]: ac | light | :[device]
                     // [state]: on | off
                     // [time]: [number]
                     // [number]: how many seconds until turned on or off

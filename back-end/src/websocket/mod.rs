@@ -1,4 +1,5 @@
-pub use ws_session::WsSession;
+pub use session::responses;
+pub use session::WsSession;
 
 pub mod server;
-mod ws_session;
+mod session;

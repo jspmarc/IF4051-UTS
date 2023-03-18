@@ -1,4 +1,7 @@
-use crate::entity::{Device, Error};
+use crate::{
+    entity::{Device, Error},
+    websocket::responses::StatusResponse,
+};
 use actix::Message;
 
 macro_rules! split_str {
@@ -16,30 +19,31 @@ pub struct ConnectRequest;
 pub struct DisconnectRequest;
 
 #[derive(Message)]
-#[rtype(bool)]
+#[rtype(StatusResponse)]
 pub struct StatusRequest {
-    device: Device,
+    devices: Vec<Device>,
 }
 
 impl StatusRequest {
     pub fn from_string(s: &str) -> Result<Self, Error> {
         let s = split_str!(s);
 
-        if s.len() != 1 {
-            return Err(Error::BadMessage);
+        let mut devices: Vec<Device> = vec![];
+
+        for device in s {
+            let device = match device.to_lowercase().as_str() {
+                "ac" => Device::Ac,
+                "light" => Device::Light,
+                _ => return Err(Error::BadMessage),
+            };
+
+            devices.push(device);
         }
 
-        let device = match s[0].to_lowercase().as_str() {
-            "ac" => Device::Ac,
-            "light" => Device::Light,
-            "all" => Device::All,
-            _ => return Err(Error::BadMessage),
-        };
-
-        Ok(Self { device })
+        Ok(Self { devices })
     }
 
-    pub fn get_device(&self) -> &Device {
-        &self.device
+    pub fn get_devices(&self) -> &Vec<Device> {
+        &self.devices
     }
 }

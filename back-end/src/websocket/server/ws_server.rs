@@ -1,5 +1,8 @@
 use super::requests::{ConnectRequest, DisconnectRequest, StatusRequest};
-use crate::entity::{Device, State};
+use crate::{
+    entity::{Device, State},
+    websocket::responses::{StatusResponse, StatusResponseElement},
+};
 use actix::{Actor, Context, Handler};
 use log::info;
 use std::sync::{atomic::Ordering, Arc};
@@ -48,14 +51,26 @@ impl Handler<DisconnectRequest> for WsServer {
 }
 
 impl Handler<StatusRequest> for WsServer {
-    type Result = bool;
+    type Result = StatusResponse;
 
     fn handle(&mut self, msg: StatusRequest, _: &mut Self::Context) -> Self::Result {
         let state = &self.app_state;
-        match msg.get_device() {
-            Device::Ac => state.is_ac_on().load(Ordering::SeqCst),
-            Device::Light => state.is_light_on().load(Ordering::SeqCst),
-            _ => false,
+
+        let mut response: StatusResponse = vec![];
+
+        let devices = msg.get_devices();
+
+        for device in devices {
+            let resp = match device {
+                Device::Ac => state.get_ac_state(),
+                Device::Light => state.get_light_state(),
+            };
+            let resp = resp.read().unwrap();
+            let resp = StatusResponseElement::new(*device, *resp);
+
+            response.push(resp);
         }
+
+        response
     }
 }
