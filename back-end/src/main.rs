@@ -4,7 +4,7 @@ use actix_web::{
     Responder,
 };
 use actix_web_actors::ws;
-use websocket::{server::WsServer, WsSession};
+use websocket::{server::WsServer, session::WsSession};
 
 mod entity;
 mod websocket;

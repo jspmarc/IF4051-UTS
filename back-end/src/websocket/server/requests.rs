@@ -1,6 +1,6 @@
 use crate::{
     entity::{Device, Error},
-    websocket::responses::{StatusResponse, SwitchResponse, TimerResponse},
+    websocket::session::responses::{StatusResponse, SwitchResponse, TimerResponse},
 };
 use actix::Message;
 use std::collections::HashSet;
