@@ -85,7 +85,7 @@ impl StreamHandler<WsResult> for WsSession {
                     // [device]: ac | light | :[device]
                     Some(("status", args)) => {
                         info!("Got topic status | args: {:?}", args);
-                        let msg = match StatusRequest::from_string(args) {
+                        let msg = match StatusRequest::parse_args_string(args) {
                             Ok(msg) => msg,
                             Err(err) => return ctx.text(err.to_string()),
                         };

@@ -5,8 +5,8 @@ use crate::{
 use actix::Message;
 
 macro_rules! split_str {
-    ($s:ident) => {
-        $s.split(':').collect::<Vec<&str>>()
+    ($s:expr, $delim:expr) => {
+        $s.split($delim).collect::<Vec<&str>>()
     };
 }
 
@@ -25,16 +25,20 @@ pub struct StatusRequest {
 }
 
 impl StatusRequest {
-    pub fn from_string(s: &str) -> Result<Self, Error> {
-        let s = split_str!(s);
+    pub fn parse_args_string(args: &str) -> Result<Self, Error> {
+        let args = split_str!(args, ' ');
+        if args.len() != 1 {
+            return Err(Error::ArgumentCountNotValid(1, args.len()));
+        }
+        let args = split_str!(args[0], ':');
 
         let mut devices: Vec<Device> = vec![];
 
-        for device in s {
+        for device in args {
             let device = match device.to_lowercase().as_str() {
                 "ac" => Device::Ac,
                 "light" => Device::Light,
-                _ => return Err(Error::BadMessage),
+                dev => return Err(Error::UnknownDevice(dev.to_string())),
             };
 
             devices.push(device);
