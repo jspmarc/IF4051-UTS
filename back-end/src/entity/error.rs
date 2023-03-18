@@ -1,5 +1,6 @@
 pub enum Error {
     BadMessage,
+    BadMessageWithReason(String),
     ArgumentCountNotValid(usize, usize),
     UnknownCommand(String),
     UnknownDevice(String),
@@ -9,6 +10,9 @@ impl ToString for Error {
     fn to_string(&self) -> String {
         match self {
             Self::BadMessage => "Can't process message".to_owned(),
+            Self::BadMessageWithReason(reason) => {
+                format!("Can't process message because: {}", reason)
+            }
             Self::ArgumentCountNotValid(expected, given) => {
                 format!("Expected {} argument(s), given {}", expected, given)
             }

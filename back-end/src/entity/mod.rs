@@ -1,4 +1,4 @@
-pub use device::{Device, DeviceStatus};
+pub use device::{Device, DeviceState};
 pub use error::Error;
 pub use state::State;
 

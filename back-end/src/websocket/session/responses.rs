@@ -1,19 +1,22 @@
 use serde::Serialize;
 
-use crate::entity::{DeviceStatus, Device};
+use crate::entity::{Device, DeviceState};
 
 #[derive(Serialize)]
 pub struct StatusResponseElement {
     name: Device,
-    status: DeviceStatus,
+    status: DeviceState,
 }
 
 impl StatusResponseElement {
-    pub fn new(name: Device, status: DeviceStatus) -> Self {
-        Self {
-            name, status
-        }
+    pub fn new(name: Device, status: DeviceState) -> Self {
+        Self { name, status }
     }
 }
 
 pub type StatusResponse = Vec<StatusResponseElement>;
+
+pub type SwitchResponse = StatusResponse;
+
+#[derive(Serialize)]
+pub struct TimerResponse;

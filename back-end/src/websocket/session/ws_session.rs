@@ -1,4 +1,5 @@
 use crate::entity::{constants, Error};
+use crate::websocket::server::requests::SwitchRequest;
 use crate::websocket::server::{requests::StatusRequest, WsServer};
 use actix::{
     fut, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, ContextFutureSpawner,
@@ -110,7 +111,25 @@ impl StreamHandler<WsResult> for WsSession {
                     // [state]: on | off
                     Some(("switch", args)) => {
                         info!("Got topic switch | args: {:?}", args);
-                        ctx.text(args);
+                        let msg = match SwitchRequest::parse_args_string(args) {
+                            Ok(msg) => msg,
+                            Err(err) => return ctx.text(err.to_string()),
+                        };
+                        server
+                            .send(msg)
+                            .into_actor(self)
+                            .then(|res, _act, ctx| {
+                                match res {
+                                    Ok(res) => ctx.text(serde_json::to_string(&res).unwrap()),
+                                    Err(_) => {
+                                        error!("Can't send message to server");
+                                        ctx.stop();
+                                    }
+                                };
+
+                                fut::ready(())
+                            })
+                            .wait(ctx)
                     }
                     // timer [device]:[state]:[time]
                     // [device]: ac | light | :[device]
