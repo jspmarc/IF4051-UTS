@@ -12,8 +12,10 @@ const uint8_t PIN_LED_BUTILIN = 2;
 const uint8_t PIN_BUTTON = 0;
 const uint8_t LED_CHANNEL = 0;
 
-const uint8_t AC_LED_FREQUENCY = 15;
-const uint8_t LIGHT_LED_FREQUENCY = 127;
+const uint8_t LED_FREQ_STATE_1 = 0; // all off
+const uint8_t LED_FREQ_STATE_2 = 63; // AC on
+const uint8_t LED_FREQ_STATE_3 = 127; // light on
+const uint8_t LED_FREQ_STATE_4 = 255; // all on
 
 #define MQTT_ID "esp32"
 #define MQTT_IN_DEVICE_TOPIC "device"

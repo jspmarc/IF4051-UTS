@@ -55,41 +55,26 @@ bool mqtt_publish(PubSubClient &client, uint8_t led_frequency) {
 static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) {
 	extern PubSubClient mqtt_client;
 
-	char *payload_str = (char *)malloc(sizeof(char) * (length + 1));
-	memcpy(payload_str, payload, length);
-	payload_str[length] = '\0';
 	Serial.printf("Message from topic: %s | with payload length: %u\r\n", topic, length);
-	free(payload_str);
 
 	if (strcmp(MQTT_IN_DEVICE_TOPIC, topic) == 0 && length == 1) {
 		extern uint8_t devices_state;
-		uint8_t led_frequency = 0;
-		uint8_t request = *payload;
+		extern uint8_t led_frequency;
 
-		if (
-				// currently AC is on but want to be turned off
-				(devices_state & 1 && (request & 1 == 0)) ||
-				// currently AC is off but want to be turned on
-				(devices_state & 1 == 0 && request & 1)
-			) {
-			devices_state ^= 1;
-
-			if (devices_state & 1) {
-				led_frequency += AC_LED_FREQUENCY;
-			}
-		}
-
-		if (
-				// currently light is on but want to be turned off
-				(devices_state & 2 && (request & 2 == 0)) ||
-				// currently light is off but want to be turned on
-				(devices_state & 2 == 0 && request & 2)
-			) {
-			devices_state ^= 2;
-
-			if (devices_state & 2) {
-				led_frequency += LIGHT_LED_FREQUENCY;
-			}
+		devices_state = *payload;
+		switch (devices_state)
+		{
+		case 0:
+			led_frequency = 0;
+			break;
+		case 1:
+			led_frequency = 63;
+			break;
+		case 2:
+			led_frequency = 127;
+			break;
+		default:
+			led_frequency = 255;
 		}
 
 		ledcWrite(LED_CHANNEL, led_frequency);
