@@ -30,7 +30,7 @@ impl Handler<SwitchRequest> for WsServer {
                 device_state.turn_off()
             }
             // TODO: add interfacing with MQTT here
-            let resp = StatusResponseElement::new(*device, *device_state);
+            let resp = StatusResponseElement::new(*device, *device_state, None);
 
             response.push(resp);
         }

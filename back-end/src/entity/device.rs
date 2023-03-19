@@ -71,6 +71,10 @@ impl DeviceState {
         self.last_turned_on_timestamp = 0;
     }
 
+    pub fn is_timer_set(&self) -> bool {
+        self.timer.is_set
+    }
+
     pub fn set_timer(&mut self, timer_timestamp_active: u64, is_turn_on: bool) {
         let mut timer = &mut self.timer;
         timer.is_set = true;

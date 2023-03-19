@@ -1,16 +1,21 @@
+use crate::entity::{Device, DeviceState, Error};
 use serde::Serialize;
 
-use crate::entity::{Device, DeviceState};
-
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StatusResponseElement {
     name: Device,
     status: DeviceState,
+    error: Option<String>,
 }
 
 impl StatusResponseElement {
-    pub fn new(name: Device, status: DeviceState) -> Self {
-        Self { name, status }
+    pub fn new(name: Device, status: DeviceState, error: Option<Error>) -> Self {
+        Self {
+            name,
+            status,
+            error: error.map(|err| err.to_string()),
+        }
     }
 }
 

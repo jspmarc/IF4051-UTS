@@ -23,7 +23,7 @@ impl Handler<StatusRequest> for WsServer {
                 Device::Light => state.get_light_state(),
             };
             let resp = resp.read().unwrap();
-            let resp = StatusResponseElement::new(*device, *resp);
+            let resp = StatusResponseElement::new(*device, *resp, None);
 
             response.push(resp);
         }

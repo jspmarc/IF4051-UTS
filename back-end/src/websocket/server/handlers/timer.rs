@@ -1,7 +1,10 @@
-use crate::{websocket::{
-    server::{requests::TimerRequest, WsServer},
-    session::responses::{TimerResponse, StatusResponseElement},
-}, entity::Device};
+use crate::{
+    entity::{Device, Error},
+    websocket::{
+        server::{requests::TimerRequest, WsServer},
+        session::responses::{StatusResponseElement, TimerResponse},
+    },
+};
 use actix::Handler;
 
 impl Handler<TimerRequest> for WsServer {
@@ -22,9 +25,13 @@ impl Handler<TimerRequest> for WsServer {
                 Device::Light => state.get_light_state(),
             };
             let mut device_state = resp.write().unwrap();
-            // TODO: add check whether timer is set or not, if set then return error
-            device_state.set_timer(timer_trigger_timestamp, is_on);
-            let resp = StatusResponseElement::new(*device, *device_state);
+            let error = if device_state.is_timer_set() {
+                Some(Error::TimerAlreadySet(device.to_string()))
+            } else {
+                device_state.set_timer(timer_trigger_timestamp, is_on);
+                None
+            };
+            let resp = StatusResponseElement::new(*device, *device_state, error);
 
             response.push(resp);
         }
