@@ -15,6 +15,4 @@ void mqtt_reconnect(PubSubClient &client);
 bool mqtt_publish(PubSubClient &client, uint8_t led_frequency);
 static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length);
 
-void handle_button_pressed(uint16_t *led_frequency);
-
 #endif//UTILS_HPP

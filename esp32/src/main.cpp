@@ -9,6 +9,8 @@ uint64_t prev_sec = 0;
 uint16_t led_frequency = 10;
 WiFiClient wifi_client;
 PubSubClient mqtt_client(wifi_client);
+/// @brief the 1st bit is 1 if AC is on. The 2nd bit is 1 if light is on.
+uint8_t devices_state = 0b00000000;
 
 void setup() {
 	Serial.begin(115200);
@@ -29,28 +31,4 @@ void loop() {
 		mqtt_reconnect(mqtt_client);
 	}
 	mqtt_client.loop();
-
-	uint64_t now = millis();
-	uint64_t now_sec = now / 1000;
-	if (now - prev_time < 100) {
-		return;
-	}
-	prev_time = now;
-
-	int button_state = digitalRead(PIN_BUTTON);
-	if (button_state == LOW) {
-		handle_button_pressed(&led_frequency);
-		Serial.printf("LED freq: %d\r\n", led_frequency);
-	}
-
-	if (prev_sec != now_sec && now_sec % 5 == 0) {
-		Serial.printf("%d    |    ", now);
-		if (mqtt_publish(mqtt_client, led_frequency)) {
-			Serial.println("Published data");
-		} else {
-			Serial.println("Can't publish data");
-		}
-	}
-
-	prev_sec = now_sec;
 }

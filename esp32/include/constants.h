@@ -12,6 +12,9 @@ const uint8_t PIN_LED_BUTILIN = 2;
 const uint8_t PIN_BUTTON = 0;
 const uint8_t LED_CHANNEL = 0;
 
+const uint8_t AC_LED_FREQUENCY = 15;
+const uint8_t LIGHT_LED_FREQUENCY = 127;
+
 #define MQTT_ID "esp32"
 #define MQTT_IN_DEVICE_TOPIC "device"
 #define MQTT_IN_PING_TOPIC "ping"
