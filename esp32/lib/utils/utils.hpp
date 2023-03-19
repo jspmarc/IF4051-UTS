@@ -5,8 +5,8 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include <PubSubClient.h>>
-#include <WiFiNINA.h>
+#include <PubSubClient.h>
+#include <WiFi.h>
 
 void wifi_setup();
 
