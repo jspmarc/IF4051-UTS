@@ -49,13 +49,16 @@ bool mqtt_publish(PubSubClient &client, uint8_t led_frequency) {
 }
 
 static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) {
+	extern PubSubClient mqtt_client;
+
 	char *payload_str = (char *)malloc(sizeof(char) * (length + 1));
 	memcpy(payload_str, payload, length);
 	payload_str[length] = '\0';
 	if (strcmp(MQTT_IN_DEVICE_TOPIC, topic) == 0) {
-		Serial.printf("Message device AC with payload: %s\r\n", payload_str);
+		Serial.printf("Message for device with payload: %s\r\n", payload_str);
 	} else if (strcmp(MQTT_IN_PING_TOPIC, topic) == 0) {
 		Serial.printf("Message for ping with payload: %s\r\n", payload_str);
+		mqtt_client.publish(MQTT_OUT_PONG_TOPIC, "pong");
 	}
 	free(payload_str);
 }
