@@ -13,7 +13,9 @@ const uint8_t PIN_BUTTON = 0;
 const uint8_t LED_CHANNEL = 0;
 
 #define MQTT_ID "esp32"
-#define MQTT_IN_TOPIC "in-tugas"
-#define MQTT_OUT_TOPIC "out-tugas"
+#define MQTT_IN_DEVICE_TOPIC "device"
+#define MQTT_IN_PING_TOPIC "ping"
+#define MQTT_OUT_DEVICE_TOPIC "device-response"
+#define MQTT_OUT_PONG_TOPIC "pong"
 
 #endif//CONSTANTS_H

@@ -31,8 +31,9 @@ void mqtt_reconnect(PubSubClient &client) {
 	while (!client.connected()) {
 		Serial.println("Connecting to MQTT broker...");
 		if (client.connect(MQTT_ID)) {
-			client.subscribe(MQTT_IN_TOPIC);
-			Serial.printf("MQTT connected and subscribed to %s\r\n", MQTT_IN_TOPIC);
+			client.subscribe(MQTT_IN_DEVICE_TOPIC);
+			client.subscribe(MQTT_IN_PING_TOPIC);
+			Serial.printf("MQTT connected and subscribed to %s\r\n", MQTT_IN_DEVICE_TOPIC, MQTT_IN_PING_TOPIC);
 		} else {
 			Serial.printf("Failed to connect, rc=%d\r\n", client.state());
 			Serial.println("Retrying in 5 secs...");
@@ -44,16 +45,19 @@ void mqtt_reconnect(PubSubClient &client) {
 bool mqtt_publish(PubSubClient &client, uint8_t led_frequency) {
 	char payload[15];
 	sprintf(payload, "13519164:%d", led_frequency);
-	return client.publish(MQTT_OUT_TOPIC, payload);
+	return client.publish(MQTT_OUT_DEVICE_TOPIC, payload);
 }
 
-void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) {
-	Serial.printf("Message from %s: ", topic);
-	for (int i = 0; i < length; i++) {
-		delay(2000);
-		Serial.print((char) payload[i]);
+static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) {
+	char *payload_str = (char *)malloc(sizeof(char) * (length + 1));
+	memcpy(payload_str, payload, length);
+	payload_str[length] = '\0';
+	if (strcmp(MQTT_IN_DEVICE_TOPIC, topic) == 0) {
+		Serial.printf("Message device AC with payload: %s\r\n", payload_str);
+	} else if (strcmp(MQTT_IN_PING_TOPIC, topic) == 0) {
+		Serial.printf("Message for ping with payload: %s\r\n", payload_str);
 	}
-	Serial.println();
+	free(payload_str);
 }
 
 void handle_button_pressed(uint16_t *led_frequency) {
