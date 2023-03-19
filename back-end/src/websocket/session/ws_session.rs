@@ -1,7 +1,7 @@
-use crate::entity::{constants, Error};
-use crate::websocket::server;
+use crate::entity::Error;
 use crate::websocket::server::requests::{SwitchRequest, TimerStartRequest, TimerStopRequest};
 use crate::websocket::server::{requests::StatusRequest, WsServer};
+use crate::websocket::{constants, server};
 use actix::{
     fut, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, ContextFutureSpawner,
     StreamHandler, WrapFuture,
