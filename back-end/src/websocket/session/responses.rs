@@ -23,4 +23,6 @@ pub type StatusResponse = Vec<StatusResponseElement>;
 
 pub type SwitchResponse = StatusResponse;
 
-pub type TimerResponse = StatusResponse;
+pub type TimerStartResponse = StatusResponse;
+
+pub type TimerStopResponse = StatusResponse;

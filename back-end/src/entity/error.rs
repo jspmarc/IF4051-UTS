@@ -3,6 +3,7 @@ pub enum Error {
     BadMessageWithReason(String),
     ArgumentCountNotValid(usize, usize),
     TimerAlreadySet(String),
+    TimerNotSet(String),
     UnknownCommand(String),
     UnknownDevice(String),
 }
@@ -19,6 +20,10 @@ impl ToString for Error {
             }
             Self::TimerAlreadySet(dev) => format!(
                 "Can't set timer for device {} because it is already set",
+                dev
+            ),
+            Self::TimerNotSet(dev) => format!(
+                "Can't stop timer for device {} because it is not yet set",
                 dev
             ),
             Self::UnknownCommand(cmd) => format!("Command {} is unknown", cmd),

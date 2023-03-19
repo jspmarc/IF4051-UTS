@@ -1,6 +1,9 @@
 use crate::{
+    device_from_str,
     entity::{Device, Error},
-    websocket::session::responses::{StatusResponse, SwitchResponse, TimerResponse}, device_from_str,
+    websocket::session::responses::{
+        StatusResponse, SwitchResponse, TimerStartResponse, TimerStopResponse,
+    },
 };
 use actix::Message;
 use std::collections::HashSet;
@@ -104,14 +107,14 @@ impl SwitchRequest {
 }
 
 #[derive(Message)]
-#[rtype(TimerResponse)]
-pub struct TimerRequest {
+#[rtype(TimerStartResponse)]
+pub struct TimerStartRequest {
     devices: Vec<Device>,
     is_turn_on: bool,
     timer_trigger_timestamp: u64,
 }
 
-impl TimerRequest {
+impl TimerStartRequest {
     pub fn parse_args_string(args: &str) -> Result<Self, Error> {
         let args = split_str!(args, ' ');
         validate_args!(args, 3);
@@ -155,5 +158,24 @@ impl TimerRequest {
 
     pub fn get_timer_trigger_timestamp(&self) -> u64 {
         self.timer_trigger_timestamp
+    }
+}
+
+#[derive(Message)]
+#[rtype(TimerStopResponse)]
+pub struct TimerStopRequest {
+    devices: Vec<Device>,
+}
+
+impl TimerStopRequest {
+    pub fn parse_args_string(args: &str) -> Result<Self, Error> {
+        match StatusRequest::parse_args_string(args) {
+            Ok(r) => Ok(Self { devices: r.devices }),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn get_devices(&self) -> &Vec<Device> {
+        &self.devices
     }
 }

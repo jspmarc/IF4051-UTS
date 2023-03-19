@@ -1,5 +1,6 @@
 use crate::entity::{constants, Error};
-use crate::websocket::server::requests::{SwitchRequest, TimerRequest};
+use crate::websocket::server;
+use crate::websocket::server::requests::{SwitchRequest, TimerStartRequest, TimerStopRequest};
 use crate::websocket::server::{requests::StatusRequest, WsServer};
 use actix::{
     fut, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, ContextFutureSpawner,
@@ -8,8 +9,6 @@ use actix::{
 use actix_web_actors::ws;
 use log::{error, info};
 use std::time::Instant;
-
-use crate::websocket::server;
 
 type WsResult = Result<ws::Message, ws::ProtocolError>;
 
@@ -138,7 +137,7 @@ impl StreamHandler<WsResult> for WsSession {
                     // [number]: timestamp when device will be turned on or off
                     Some(("timer:start", args)) => {
                         info!("Got topic timer:start | args: {:?}", args);
-                        let msg = match TimerRequest::parse_args_string(args) {
+                        let msg = match TimerStartRequest::parse_args_string(args) {
                             Ok(msg) => msg,
                             Err(err) => return ctx.text(err.to_string()),
                         };
@@ -162,7 +161,25 @@ impl StreamHandler<WsResult> for WsSession {
                     // [device]: ac | light | :[device]
                     Some(("timer:stop", args)) => {
                         info!("Got topic timer:stop | args: {:?}", args);
-                        ctx.text(args);
+                        let msg = match TimerStopRequest::parse_args_string(args) {
+                            Ok(msg) => msg,
+                            Err(err) => return ctx.text(err.to_string()),
+                        };
+                        server
+                            .send(msg)
+                            .into_actor(self)
+                            .then(|res, _act, ctx| {
+                                match res {
+                                    Ok(res) => ctx.text(serde_json::to_string(&res).unwrap()),
+                                    Err(_) => {
+                                        error!("Can't send message to server");
+                                        ctx.stop();
+                                    }
+                                };
+
+                                fut::ready(())
+                            })
+                            .wait(ctx)
                     }
                     Some((cmd, _)) => ctx.text(Error::UnknownCommand(cmd.to_owned()).to_string()),
                     _ => ctx.text(Error::BadMessage.to_string()),
