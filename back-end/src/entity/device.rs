@@ -1,14 +1,45 @@
+use super::Error;
+use serde::Serialize;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::Serialize;
-
 #[derive(Clone, Copy, Serialize)]
+#[repr(u8)]
 pub enum Device {
     Ac,
     Light,
 }
 
+impl Device {
+    pub fn from_str(value: &str) -> Result<Self, Error> {
+        match value.to_lowercase().trim() {
+            "ac" => Ok(Device::Ac),
+            "light" => Ok(Device::Light),
+            dev => Err(Error::UnknownDevice(dev.to_string())),
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! device_from_str {
+    ($str:expr) => {
+        match Device::from_str($str) {
+            Ok(dev) => dev,
+            Err(err) => return Err(err),
+        }
+    };
+}
+
+impl ToString for Device {
+    fn to_string(&self) -> String {
+        match *self {
+            Device::Ac => String::from("ac"),
+            Device::Light => String::from("light"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DeviceState {
     is_on: bool,
     last_turned_on_timestamp: u64,
@@ -56,6 +87,7 @@ impl DeviceState {
 }
 
 #[derive(Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DeviceTimer {
     is_set: bool,
     /// the timestamp for when the timer will trigger

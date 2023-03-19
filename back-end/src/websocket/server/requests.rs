@@ -46,12 +46,7 @@ impl StatusRequest {
         let mut devices: Vec<Device> = vec![];
 
         for device in args {
-            let device = match device.to_lowercase().trim() {
-                "ac" => Device::Ac,
-                "light" => Device::Light,
-                dev => return Err(Error::UnknownDevice(dev.to_string())),
-            };
-
+            let device = device_from_str!(device);
             devices.push(device);
         }
 
@@ -89,12 +84,7 @@ impl SwitchRequest {
         let mut devices: Vec<Device> = vec![];
 
         for device in devices_args {
-            let device = match device.to_lowercase().trim() {
-                "ac" => Device::Ac,
-                "light" => Device::Light,
-                dev => return Err(Error::UnknownDevice(dev.to_string())),
-            };
-
+            let device = device_from_str!(device);
             devices.push(device);
         }
 
@@ -144,12 +134,7 @@ impl TimerRequest {
         let mut devices: Vec<Device> = vec![];
 
         for device in devices_args {
-            let device = match device.to_lowercase().trim() {
-                "ac" => Device::Ac,
-                "light" => Device::Light,
-                dev => return Err(Error::UnknownDevice(dev.to_string())),
-            };
-
+            let device = device_from_str!(device);
             devices.push(device);
         }
 
