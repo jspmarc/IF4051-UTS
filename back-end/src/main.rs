@@ -4,7 +4,7 @@ use actix_web::{
     Responder,
 };
 use actix_web_actors::ws;
-use log::{error, info};
+use log::{error, info, warn};
 use mqtt::MqttClient;
 use tasks::*;
 use tokio::{
@@ -36,7 +36,7 @@ async fn hello() -> impl Responder {
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
     // ::std::env::set_var("RUST_LOG", "actix_web=debug,INFO");
-    ::std::env::set_var("RUST_LOG", "INFO");
+    std::env::set_var("RUST_LOG", "INFO");
     env_logger::init();
 
     // channels
@@ -48,7 +48,27 @@ async fn main() -> Result<(), std::io::Error> {
     let (tx_timer_light, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
 
     // MQTT
-    let mut mqtt_client = MqttClient::new("127.0.0.1", 1883);
+    let host = match std::env::var("MQTT_HOST") {
+        Ok(h) => h,
+        Err(_) => {
+            warn!("Can't find MQTT_HOST env variable, using the default 127.0.0.1");
+            "127.0.0.1".to_string()
+        }
+    };
+    let port = match std::env::var("MQTT_PORT") {
+        Ok(h) => match h.parse::<u16>() {
+            Ok(n) => n,
+            Err(_) => {
+                warn!("Can't parse MQTT_PORT env variable, using the default 1883");
+                1883_u16
+            }
+        },
+        Err(_) => {
+            warn!("Can't find MQTT_PORT env variable, using the default 1883");
+            1883_u16
+        }
+    };
+    let mut mqtt_client = MqttClient::new(&host, port);
     if let Err(e) = mqtt_client.connect(3) {
         error!("{}", e.to_string());
         std::process::exit(1);
@@ -78,6 +98,26 @@ async fn main() -> Result<(), std::io::Error> {
     ));
 
     // HTTP and WS server
+    let host = match std::env::var("HTTP_HOST") {
+        Ok(h) => h,
+        Err(_) => {
+            warn!("Can't find HTTP_HOST env variable, using the default 0.0.0.0");
+            "0.0.0.0".to_string()
+        }
+    };
+    let port = match std::env::var("HTTP_PORT") {
+        Ok(h) => match h.parse::<u16>() {
+            Ok(n) => n,
+            Err(_) => {
+                warn!("Can't parse HTTP_PORT env variable, using the default 8080");
+                8080_u16
+            }
+        },
+        Err(_) => {
+            warn!("Can't find HTTP_PORT env variable, using the default 8080");
+            8080_u16
+        }
+    };
     let ws_server = WsServer::new(&tx_timer_ac, &tx_timer_light).start();
     let server = HttpServer::new(move || {
         App::new()
@@ -86,7 +126,7 @@ async fn main() -> Result<(), std::io::Error> {
             .service(hello)
             .service(ws_handler)
     })
-    .bind(("0.0.0.0", 8080));
+    .bind((host, port));
     if let Err(e) = server {
         error!("{}", e);
         rx_shutdown.close();

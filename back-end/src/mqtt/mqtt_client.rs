@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, warn};
 
 use crate::entity::Error;
 use std::{sync::Arc, thread, time::Duration};
@@ -68,10 +68,10 @@ impl MqttClient {
             while let Err(e) = client.reconnect() {
                 retry_count += 1;
                 if retry_count >= max_retries {
-                    info!("Can't connect to MQTT broker, reason: {}", e);
+                    warn!("Can't connect to MQTT broker, reason: {}", e);
                     return Err(Error::MqttClientConnectionFailure(e.to_string()));
                 } else {
-                    info!("Can't connect to MQTT broker, reason: {}. Retrying...", e);
+                    warn!("Can't connect to MQTT broker, reason: {}. Retrying...", e);
                     thread::sleep(Duration::from_secs(1 * retry_count as u64));
                 }
             }
