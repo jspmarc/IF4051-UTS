@@ -6,12 +6,17 @@ use actix_web::{
 use actix_web_actors::ws;
 use log::{error, info};
 use mqtt::MqttClient;
-use std::{sync::Arc, thread, time::Duration};
-use tokio::{signal, sync::mpsc, task};
+use tasks::*;
+use tokio::{
+    signal,
+    sync::{broadcast, mpsc},
+    task,
+};
 use websocket::{server::WsServer, session::WsSession};
 
 mod entity;
 mod mqtt;
+mod tasks;
 mod websocket;
 
 #[get("/ws")]
@@ -28,19 +33,6 @@ async fn hello() -> impl Responder {
     HttpResponse::new(StatusCode::NO_CONTENT)
 }
 
-fn mqtt_publisher(client: Arc<paho_mqtt::Client>, tx_shutdown: mpsc::Sender<()>) {
-    let msg = paho_mqtt::MessageBuilder::new()
-        .topic(mqtt::topic::MQTT_OUT_PING_TOPIC)
-        .payload("")
-        .finalize();
-    while !tx_shutdown.is_closed() {
-        let _ = client.publish(msg.clone());
-        thread::sleep(Duration::from_secs(2));
-    }
-
-    info!("MQTT publisher stopped");
-}
-
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
     // ::std::env::set_var("RUST_LOG", "actix_web=debug,INFO");
@@ -49,6 +41,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     // channel to determine whether an async task should shutdown or not
     let (tx_shutdown, mut rx_shutdown) = mpsc::channel(1);
+    let (tx_timer, _) = broadcast::channel::<i32>(1);
 
     // MQTT
     let mut mqtt_client = MqttClient::new("127.0.0.1", 1883);
@@ -62,10 +55,18 @@ async fn main() -> Result<(), std::io::Error> {
     };
     let client_clone = client.clone();
     let tx_shutdown_clone = tx_shutdown.clone();
-    let mqtt_publisher = task::spawn_blocking(move || mqtt_publisher(client_clone, tx_shutdown_clone));
+    let mqtt_publisher =
+        task::spawn_blocking(move || mqtt_publisher(client_clone, tx_shutdown_clone));
+
+    // tasks
+    let task_timer = tokio::spawn(task_timer(
+        client.clone(),
+        tx_timer.clone(),
+        tx_shutdown.clone(),
+    ));
 
     // HTTP and WS server
-    let ws_server = WsServer::new().start();
+    let ws_server = WsServer::new(&tx_timer).start();
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(ws_server.clone()))
@@ -95,7 +96,7 @@ async fn main() -> Result<(), std::io::Error> {
     });
 
     // join tasks
-    let res = tokio::join!(server, mqtt_publisher, graceful_shutdown);
+    let res = tokio::join!(server, mqtt_publisher, graceful_shutdown, task_timer);
 
     if client.is_connected() {
         let _ = client.disconnect(None);

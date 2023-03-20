@@ -32,6 +32,7 @@ impl Handler<TimerStartRequest> for WsServer {
                 Some(Error::TimerAlreadySet(device.to_string()))
             } else {
                 device_state.set_timer(timer_trigger_timestamp, is_on);
+                let _ = self.tx_timer.send(2);
                 None
             };
             let resp = StatusResponseElement::new(*device, *device_state, error);
