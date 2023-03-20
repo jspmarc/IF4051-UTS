@@ -1,6 +1,5 @@
+use crate::entity::DeviceState;
 use std::sync::{atomic::AtomicU32, Arc, RwLock};
-
-use super::DeviceState;
 
 #[derive(Clone)]
 #[allow(dead_code)]

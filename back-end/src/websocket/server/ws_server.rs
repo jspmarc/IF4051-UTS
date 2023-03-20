@@ -1,4 +1,4 @@
-use crate::{entity::State, tasks::channel_type};
+use crate::{tasks::channel_type, websocket::State};
 use actix::{Actor, Context};
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc};
