@@ -4,6 +4,12 @@ pub struct PublishMessage {
     pub(super) message: Vec<u8>,
 }
 
+impl PublishMessage {
+    pub fn new(topic: String, message: Vec<u8>) -> Self {
+        Self { topic, message }
+    }
+}
+
 #[derive(Clone)]
 pub struct TimerStartRequest {
     pub(super) is_turn_on: bool,

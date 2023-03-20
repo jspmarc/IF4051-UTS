@@ -42,8 +42,7 @@ async fn main() -> Result<(), std::io::Error> {
     // channels
     // channel to determine whether an async task should shutdown or not
     let (tx_shutdown, mut rx_shutdown) = mpsc::channel(1);
-    let (tx_mqtt_publisher, rx_mqtt_publisher) =
-        mpsc::channel::<channel_type::PublishMessage>(1);
+    let (tx_mqtt_publisher, rx_mqtt_publisher) = mpsc::channel::<channel_type::PublishMessage>(1);
     let (tx_timer_ac, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
     let (tx_timer_light, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
 
@@ -118,7 +117,7 @@ async fn main() -> Result<(), std::io::Error> {
             8080_u16
         }
     };
-    let ws_server = WsServer::new(&tx_timer_ac, &tx_timer_light).start();
+    let ws_server = WsServer::new(tx_timer_ac, tx_timer_light, tx_mqtt_publisher).start();
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(ws_server.clone()))
