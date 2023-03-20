@@ -6,6 +6,10 @@ pub enum Error {
     TimerNotSet(String),
     UnknownCommand(String),
     UnknownDevice(String),
+
+    MqttClientNotCreated,
+    MqttClientCreationFailure(String),
+    MqttClientConnectionFailure(String),
 }
 
 impl ToString for Error {
@@ -28,6 +32,14 @@ impl ToString for Error {
             ),
             Self::UnknownCommand(cmd) => format!("Command {} is unknown", cmd),
             Self::UnknownDevice(dev) => format!("Device {} is unknown", dev),
+
+            Self::MqttClientNotCreated => "MQTT client is not yet created".to_string(),
+            Self::MqttClientCreationFailure(msg) => {
+                format!("Can't create MQTT client. Reason: {}", msg)
+            }
+            Self::MqttClientConnectionFailure(msg) => {
+                format!("Can't connect to MQTT broker. Reason: {}", msg)
+            }
         }
     }
 }
