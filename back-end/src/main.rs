@@ -46,6 +46,29 @@ async fn main() -> Result<(), std::io::Error> {
     let (tx_timer_ac, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
     let (tx_timer_light, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
 
+    let ws_server = WsServer::new(
+        tx_timer_ac.clone(),
+        tx_timer_light.clone(),
+        tx_mqtt_publisher.clone(),
+    )
+    .start();
+
+    // *** timer tasks ***
+    let task_timer_ac = tokio::spawn(task_timer(
+        tx_timer_ac.clone(),
+        tx_mqtt_publisher.clone(),
+        tx_shutdown.clone(),
+        entity::Device::Ac,
+        ws_server.clone(),
+    ));
+    let task_timer_light = tokio::spawn(task_timer(
+        tx_timer_light.clone(),
+        tx_mqtt_publisher.clone(),
+        tx_shutdown.clone(),
+        entity::Device::Light,
+        ws_server.clone(),
+    ));
+
     // *** MQTT ***
     let host = match std::env::var("MQTT_HOST") {
         Ok(h) => h,
@@ -89,20 +112,6 @@ async fn main() -> Result<(), std::io::Error> {
         tx_shutdown.clone(),
     ));
 
-    // *** timer tasks ***
-    let task_timer_ac = tokio::spawn(task_timer(
-        tx_timer_ac.clone(),
-        tx_mqtt_publisher.clone(),
-        tx_shutdown.clone(),
-        entity::Device::Ac,
-    ));
-    let task_timer_light = tokio::spawn(task_timer(
-        tx_timer_light.clone(),
-        tx_mqtt_publisher.clone(),
-        tx_shutdown.clone(),
-        entity::Device::Light,
-    ));
-
     // *** HTTP and WS server ***
     let host = match std::env::var("HTTP_HOST") {
         Ok(h) => h,
@@ -124,7 +133,6 @@ async fn main() -> Result<(), std::io::Error> {
             8080_u16
         }
     };
-    let ws_server = WsServer::new(tx_timer_ac, tx_timer_light, tx_mqtt_publisher).start();
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(ws_server.clone()))

@@ -97,6 +97,13 @@ impl SwitchRequest {
         })
     }
 
+    pub fn new(devices: Vec<Device>, is_turn_on: bool) -> Self {
+        Self {
+            devices,
+            is_turn_on,
+        }
+    }
+
     pub fn get_devices(&self) -> &Vec<Device> {
         &self.devices
     }
@@ -177,5 +184,13 @@ impl TimerStopRequest {
 
     pub fn get_devices(&self) -> &Vec<Device> {
         &self.devices
+    }
+}
+
+impl From<Device> for TimerStopRequest {
+    fn from(value: Device) -> Self {
+        Self {
+            devices: vec![value],
+        }
     }
 }

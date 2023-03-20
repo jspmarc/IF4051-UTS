@@ -1,5 +1,10 @@
 use self::channel_type::{PublishMessage, TimerStartRequest};
-use crate::{entity::Device, mqtt};
+use crate::{
+    entity::Device,
+    mqtt,
+    websocket::server::{self, WsServer},
+};
+use actix::Addr;
 use log::{error, info};
 use std::sync::Arc;
 use tokio::{
@@ -42,6 +47,7 @@ pub async fn task_timer(
     tx_publish_mqtt: mpsc::Sender<PublishMessage>,
     tx_shutdown: mpsc::Sender<()>,
     device: Device,
+    ws_server: Addr<WsServer>,
 ) {
     let mut rx = tx.subscribe();
     info!("Timer task started");
@@ -64,6 +70,11 @@ pub async fn task_timer(
                         message: vec![msg.is_turn_on.into()],
                     })
                     .await;
+                ws_server.do_send(server::requests::TimerStopRequest::from(device));
+                ws_server.do_send(server::requests::SwitchRequest::new(
+                    vec![device],
+                    msg.is_turn_on,
+                ));
             }
             Err(e) => {
                 if e != broadcast::error::TryRecvError::Empty {
