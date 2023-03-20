@@ -52,13 +52,18 @@ pub async fn task_timer(
     while !tx_shutdown.is_closed() {
         match rx.try_recv() {
             Ok(msg) => {
-                info!("Got timer request. Wait duration: {}", msg.seconds_to_trigger);
+                info!(
+                    "Got timer request. Wait duration: {}",
+                    msg.seconds_to_trigger
+                );
                 time::sleep(time::Duration::from_secs(msg.seconds_to_trigger)).await;
                 info!("Timer triggered");
-                let _ = tx_publish_mqtt.send(PublishMessage {
-                    topic: topic.to_string(),
-                    message: vec![msg.is_turn_on.into()],
-                }).await;
+                let _ = tx_publish_mqtt
+                    .send(PublishMessage {
+                        topic: topic.to_string(),
+                        message: vec![msg.is_turn_on.into()],
+                    })
+                    .await;
             }
             Err(e) => {
                 if e != broadcast::error::TryRecvError::Empty {

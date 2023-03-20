@@ -39,14 +39,14 @@ async fn main() -> Result<(), std::io::Error> {
     std::env::set_var("RUST_LOG", "INFO");
     env_logger::init();
 
-    // channels
+    // *** channels ***
     // channel to determine whether an async task should shutdown or not
     let (tx_shutdown, mut rx_shutdown) = mpsc::channel(1);
     let (tx_mqtt_publisher, rx_mqtt_publisher) = mpsc::channel::<channel_type::PublishMessage>(1);
     let (tx_timer_ac, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
     let (tx_timer_light, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
 
-    // MQTT
+    // *** MQTT ***
     let host = match std::env::var("MQTT_HOST") {
         Ok(h) => h,
         Err(_) => {
@@ -89,7 +89,7 @@ async fn main() -> Result<(), std::io::Error> {
         tx_shutdown.clone(),
     ));
 
-    // tasks
+    // *** timer tasks ***
     let task_timer_ac = tokio::spawn(task_timer(
         tx_timer_ac.clone(),
         tx_mqtt_publisher.clone(),
@@ -103,7 +103,7 @@ async fn main() -> Result<(), std::io::Error> {
         entity::Device::Light,
     ));
 
-    // HTTP and WS server
+    // *** HTTP and WS server ***
     let host = match std::env::var("HTTP_HOST") {
         Ok(h) => h,
         Err(_) => {
