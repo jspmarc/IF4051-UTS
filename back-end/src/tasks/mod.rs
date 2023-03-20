@@ -64,9 +64,9 @@ pub async fn task_timer(
                 if e != broadcast::error::TryRecvError::Empty {
                     error!("Can't receive message from timer task channel {}", e);
                 }
-                time::sleep(time::Duration::from_millis(50)).await;
             }
         };
+        time::sleep(time::Duration::from_millis(50)).await;
     }
     info!("Timer task stopped");
 }

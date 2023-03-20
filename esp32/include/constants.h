@@ -18,6 +18,7 @@ const uint8_t LED_FREQ_STATE_3 = 127; // light on
 const uint8_t LED_FREQ_STATE_4 = 255; // all on
 
 #define MQTT_ID "esp32"
+#define MQTT_IN_RESET_TOPIC "reset"
 #define MQTT_IN_AC_TOPIC "d-ac"
 #define MQTT_IN_LIGHT_TOPIC "d-light"
 #define MQTT_IN_PING_TOPIC "ping"

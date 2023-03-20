@@ -1,7 +1,7 @@
 use actix::{Actor, Addr};
 use actix_web::{
-    get, http::StatusCode, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer,
-    Responder,
+    body::MessageBody, get, http::StatusCode, middleware::Logger, web, App, HttpRequest,
+    HttpResponse, HttpServer, Responder,
 };
 use actix_web_actors::ws;
 use log::{error, info, warn};
@@ -76,6 +76,13 @@ async fn main() -> Result<(), std::io::Error> {
         Ok(c) => c,
         Err(e) => panic!("{}", e.to_string()),
     };
+    let _ = client.publish(
+        paho_mqtt::MessageBuilder::new()
+            .topic(mqtt::topic::MQTT_OUT_RESET_TOPIC)
+            .payload("test".try_into_bytes().unwrap())
+            .finalize(),
+    );
+    info!("Device state has been reset");
     let mqtt_publisher = task::spawn(mqtt_publisher(
         client.clone(),
         rx_mqtt_publisher,

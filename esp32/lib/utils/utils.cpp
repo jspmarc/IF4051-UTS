@@ -33,11 +33,13 @@ void mqtt_reconnect(PubSubClient &client) {
 		if (client.connect(MQTT_ID)) {
 			client.subscribe(MQTT_IN_AC_TOPIC);
 			client.subscribe(MQTT_IN_LIGHT_TOPIC);
+			client.subscribe(MQTT_IN_RESET_TOPIC);
 			client.subscribe(MQTT_IN_PING_TOPIC);
 			Serial.printf(
-				"MQTT connected and subscribed to [%s], [%s], and [%s]\r\n",
+				"MQTT connected and subscribed to [%s], [%s], [%s], and [%s]\r\n",
 				MQTT_IN_AC_TOPIC,
 				MQTT_IN_LIGHT_TOPIC,
+				MQTT_IN_RESET_TOPIC,
 				MQTT_IN_PING_TOPIC
 			);
 		} else {
@@ -58,8 +60,6 @@ static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) 
 	extern PubSubClient mqtt_client;
 	extern uint8_t devices_state;
 	extern uint8_t led_frequency;
-	// extern bool is_ac_on;
-	// extern bool is_light_on;
 
 	bool update_frequency = false;
 
@@ -68,6 +68,12 @@ static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) 
 	if (strcmp(MQTT_IN_PING_TOPIC, topic) == 0) {
 		mqtt_client.publish(MQTT_OUT_PONG_TOPIC, "pong");
 		return;
+	}
+
+	if (strcmp(MQTT_IN_RESET_TOPIC, topic) == 0) {
+		devices_state = 0;
+		led_frequency = 0;
+		ledcWrite(LED_CHANNEL, led_frequency);
 	}
 
 	Serial.printf("Before: %d\r\n", devices_state);
