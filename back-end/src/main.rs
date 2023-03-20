@@ -39,9 +39,13 @@ async fn main() -> Result<(), std::io::Error> {
     ::std::env::set_var("RUST_LOG", "INFO");
     env_logger::init();
 
+    // channels
     // channel to determine whether an async task should shutdown or not
     let (tx_shutdown, mut rx_shutdown) = mpsc::channel(1);
-    let (tx_timer, _) = broadcast::channel::<i32>(1);
+    let (tx_mqtt_publisher, rx_mqtt_publisher) =
+        mpsc::channel::<channel_type::PublishMessage>(1);
+    let (tx_timer_ac, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
+    let (tx_timer_light, _) = broadcast::channel::<channel_type::TimerStartRequest>(1);
 
     // MQTT
     let mut mqtt_client = MqttClient::new("127.0.0.1", 1883);
@@ -53,20 +57,28 @@ async fn main() -> Result<(), std::io::Error> {
         Ok(c) => c,
         Err(e) => panic!("{}", e.to_string()),
     };
-    let client_clone = client.clone();
-    let tx_shutdown_clone = tx_shutdown.clone();
-    let mqtt_publisher =
-        task::spawn_blocking(move || mqtt_publisher(client_clone, tx_shutdown_clone));
-
-    // tasks
-    let task_timer = tokio::spawn(task_timer(
+    let mqtt_publisher = task::spawn(mqtt_publisher(
         client.clone(),
-        tx_timer.clone(),
+        rx_mqtt_publisher,
         tx_shutdown.clone(),
     ));
 
+    // tasks
+    let task_timer_ac = tokio::spawn(task_timer(
+        tx_timer_ac.clone(),
+        tx_mqtt_publisher.clone(),
+        tx_shutdown.clone(),
+        entity::Device::Ac,
+    ));
+    let task_timer_light = tokio::spawn(task_timer(
+        tx_timer_light.clone(),
+        tx_mqtt_publisher.clone(),
+        tx_shutdown.clone(),
+        entity::Device::Light,
+    ));
+
     // HTTP and WS server
-    let ws_server = WsServer::new(&tx_timer).start();
+    let ws_server = WsServer::new(&tx_timer_ac, &tx_timer_light).start();
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(ws_server.clone()))
@@ -96,7 +108,13 @@ async fn main() -> Result<(), std::io::Error> {
     });
 
     // join tasks
-    let res = tokio::join!(server, mqtt_publisher, graceful_shutdown, task_timer);
+    let res = tokio::join!(
+        server,
+        mqtt_publisher,
+        graceful_shutdown,
+        task_timer_ac,
+        task_timer_light,
+    );
 
     if client.is_connected() {
         let _ = client.disconnect(None);
