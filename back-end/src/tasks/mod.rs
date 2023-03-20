@@ -1,6 +1,5 @@
 use self::channel_type::{PublishMessage, TimerStartRequest};
-use crate::entity::Device;
-use actix_web::body::MessageBody;
+use crate::{entity::Device, mqtt};
 use log::{error, info};
 use std::sync::Arc;
 use tokio::{
@@ -46,6 +45,10 @@ pub async fn task_timer(
 ) {
     let mut rx = tx.subscribe();
     info!("Timer task started");
+    let topic = match device {
+        Device::Ac => mqtt::topic::MQTT_OUT_AC_TOPIC,
+        Device::Light => mqtt::topic::MQTT_OUT_LIGHT_TOPIC,
+    };
     while !tx_shutdown.is_closed() {
         match rx.try_recv() {
             Ok(msg) => {
@@ -53,8 +56,8 @@ pub async fn task_timer(
                 time::sleep(time::Duration::from_secs(msg.seconds_to_trigger)).await;
                 info!("Timer triggered");
                 let _ = tx_publish_mqtt.send(PublishMessage {
-                    topic: "ping".to_string(),
-                    message: "ping".try_into_bytes().unwrap().to_vec(),
+                    topic: topic.to_string(),
+                    message: vec![msg.is_turn_on.into()],
                 }).await;
             }
             Err(e) => {

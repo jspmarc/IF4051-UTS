@@ -111,7 +111,7 @@ impl SwitchRequest {
 pub struct TimerStartRequest {
     devices: Vec<Device>,
     is_turn_on: bool,
-    timer_trigger_timestamp: u64,
+    seconds_to_trigger: u64,
 }
 
 impl TimerStartRequest {
@@ -129,7 +129,7 @@ impl TimerStartRequest {
                 )))
             }
         };
-        let timer_trigger_timestamp = match args[2].parse::<u64>() {
+        let seconds_to_trigger = match args[2].parse::<u64>() {
             Ok(sec) => sec,
             Err(err) => return Err(Error::BadMessageWithReason(err.to_string())),
         };
@@ -144,7 +144,7 @@ impl TimerStartRequest {
         Ok(Self {
             devices,
             is_turn_on,
-            timer_trigger_timestamp,
+            seconds_to_trigger,
         })
     }
 
@@ -156,8 +156,8 @@ impl TimerStartRequest {
         self.is_turn_on
     }
 
-    pub fn get_timer_trigger_timestamp(&self) -> u64 {
-        self.timer_trigger_timestamp
+    pub fn seconds_to_trigger(&self) -> u64 {
+        self.seconds_to_trigger
     }
 }
 

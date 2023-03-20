@@ -1,5 +1,3 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
 use crate::{
     entity::{Device, Error},
     tasks::channel_type,
@@ -23,12 +21,7 @@ impl Handler<TimerStartRequest> for WsServer {
 
         let devices = msg.get_devices();
         let is_on = msg.is_on();
-        let timer_trigger_timestamp = msg.get_timer_trigger_timestamp();
-
-        let timestamp_now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        // TODO: check if negative
-        let seconds_to_trigger =
-            (Duration::from_secs(timer_trigger_timestamp) - timestamp_now).as_secs();
+        let seconds_to_trigger = msg.seconds_to_trigger();
 
         for device in devices {
             let (resp, tx_timer) = match device {
@@ -39,7 +32,7 @@ impl Handler<TimerStartRequest> for WsServer {
             let error = if device_state.is_timer_set() {
                 Some(Error::TimerAlreadySet(device.to_string()))
             } else {
-                device_state.set_timer(timer_trigger_timestamp, is_on);
+                device_state.set_timer(seconds_to_trigger, is_on);
                 let msg = channel_type::TimerStartRequest::new(is_on, seconds_to_trigger);
                 let _ = tx_timer.send(msg);
                 None
