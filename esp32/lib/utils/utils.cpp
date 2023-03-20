@@ -31,11 +31,13 @@ void mqtt_reconnect(PubSubClient &client) {
 	while (!client.connected()) {
 		Serial.println("Connecting to MQTT broker...");
 		if (client.connect(MQTT_ID)) {
-			client.subscribe(MQTT_IN_DEVICE_TOPIC);
+			client.subscribe(MQTT_IN_AC_TOPIC);
+			client.subscribe(MQTT_IN_LIGHT_TOPIC);
 			client.subscribe(MQTT_IN_PING_TOPIC);
 			Serial.printf(
-				"MQTT connected and subscribed to [%s] and [%s]\r\n",
-				MQTT_IN_DEVICE_TOPIC,
+				"MQTT connected and subscribed to [%s], [%s], and [%s]\r\n",
+				MQTT_IN_AC_TOPIC,
+				MQTT_IN_LIGHT_TOPIC,
 				MQTT_IN_PING_TOPIC
 			);
 		} else {
@@ -54,14 +56,45 @@ bool mqtt_publish(PubSubClient &client, uint8_t led_frequency) {
 
 static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) {
 	extern PubSubClient mqtt_client;
+	extern uint8_t devices_state;
+	extern uint8_t led_frequency;
+	// extern bool is_ac_on;
+	// extern bool is_light_on;
+
+	bool update_frequency = false;
 
 	Serial.printf("Message from topic: %s | with payload length: %u\r\n", topic, length);
 
-	if (strcmp(MQTT_IN_DEVICE_TOPIC, topic) == 0 && length == 1) {
-		extern uint8_t devices_state;
-		extern uint8_t led_frequency;
+	if (strcmp(MQTT_IN_PING_TOPIC, topic) == 0) {
+		mqtt_client.publish(MQTT_OUT_PONG_TOPIC, "pong");
+		return;
+	}
 
-		devices_state = *payload;
+	Serial.printf("Before: %d\r\n", devices_state);
+	if (strcmp(MQTT_IN_AC_TOPIC, topic) == 0 && length == 1) {
+		int request = *payload & 1;
+		if (request == 1) {
+			// turns on AC
+			devices_state |= 0b00000001;
+		} else {
+			// turns off AC
+			devices_state &= 0b00000010;
+		}
+		update_frequency = true;
+	} else if (strcmp(MQTT_IN_LIGHT_TOPIC, topic) == 0 && length == 1) {
+		int request = *payload & 1;
+		if (request == 1) {
+			// turns on light
+			devices_state |= 0b00000010;
+		} else {
+			// turns off light
+			devices_state &= 0b00000001;
+		}
+		update_frequency = true;
+	}
+	Serial.printf("After: %d\r\n", devices_state);
+
+	if (update_frequency) {
 		switch (devices_state)
 		{
 		case 0:
@@ -76,9 +109,6 @@ static void __mqtt_callback(char *topic, uint8_t *payload, unsigned int length) 
 		default:
 			led_frequency = 255;
 		}
-
 		ledcWrite(LED_CHANNEL, led_frequency);
-	} else if (strcmp(MQTT_IN_PING_TOPIC, topic) == 0) {
-		mqtt_client.publish(MQTT_OUT_PONG_TOPIC, "pong");
 	}
 }
