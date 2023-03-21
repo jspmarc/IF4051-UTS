@@ -7,13 +7,11 @@ use crate::{
 };
 use actix::Handler;
 
-impl Handler<StatusRequest> for WsServer {
-    type Result = StatusResponse;
-
-    fn handle(&mut self, msg: StatusRequest, _: &mut Self::Context) -> Self::Result {
+impl WsServer {
+    pub fn create_status_response(&mut self, msg: StatusRequest) -> StatusResponse {
         let state = &self.app_state;
 
-        let mut response: StatusResponse = vec![];
+        let mut response: StatusResponse = StatusResponse::default();
 
         let devices = msg.get_devices();
 
@@ -29,5 +27,13 @@ impl Handler<StatusRequest> for WsServer {
         }
 
         response
+    }
+}
+
+impl Handler<StatusRequest> for WsServer {
+    type Result = StatusResponse;
+
+    fn handle(&mut self, msg: StatusRequest, _: &mut Self::Context) -> Self::Result {
+        self.create_status_response(msg)
     }
 }

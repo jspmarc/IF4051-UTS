@@ -1,5 +1,5 @@
 use crate::websocket::server::{
-    requests::{ConnectRequest, DisconnectRequest},
+    requests::{ConnectRequest, DisconnectRequest, StatusRequest},
     WsServer,
 };
 use actix::Handler;
@@ -9,13 +9,15 @@ use std::sync::atomic::Ordering;
 impl Handler<ConnectRequest> for WsServer {
     type Result = ();
 
-    fn handle(&mut self, _: ConnectRequest, _: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: ConnectRequest, _: &mut Self::Context) -> Self::Result {
         let counter = &self.app_state.counter;
         counter.fetch_add(1, Ordering::SeqCst);
         info!(
             "A session is CONNECTED | counter: {}",
             counter.load(Ordering::SeqCst)
         );
+
+        msg.recipient.do_send(self.create_status_response(StatusRequest::default()));
     }
 }
 

@@ -5,7 +5,7 @@ use crate::{
         StatusResponse, SwitchResponse, TimerStartResponse, TimerStopResponse,
     },
 };
-use actix::Message;
+use actix::{Message, Recipient};
 use std::collections::HashSet;
 
 macro_rules! split_str {
@@ -28,7 +28,9 @@ macro_rules! validate_args {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct ConnectRequest;
+pub struct ConnectRequest {
+    pub recipient: Recipient<StatusResponse>,
+}
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -58,6 +60,12 @@ impl StatusRequest {
 
     pub fn get_devices(&self) -> &Vec<Device> {
         &self.devices
+    }
+}
+
+impl Default for StatusRequest {
+    fn default() -> Self {
+        Self { devices: vec![Device::Ac, Device::Light] }
     }
 }
 

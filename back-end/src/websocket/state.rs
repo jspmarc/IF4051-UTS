@@ -1,10 +1,10 @@
 use crate::entity::DeviceState;
-use std::sync::{atomic::AtomicU32, Arc, RwLock};
+use std::sync::{atomic::AtomicUsize, Arc, RwLock};
 
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct State {
-    pub counter: Arc<AtomicU32>,
+    pub counter: Arc<AtomicUsize>,
 
     ac: Arc<RwLock<DeviceState>>,
     light: Arc<RwLock<DeviceState>>,
@@ -14,7 +14,7 @@ impl State {
     pub fn new() -> Self {
         Self {
             // clients connected
-            counter: Arc::new(AtomicU32::new(0)),
+            counter: Arc::new(AtomicUsize::new(0)),
 
             // device state
             ac: Arc::new(RwLock::new(DeviceState::new())),

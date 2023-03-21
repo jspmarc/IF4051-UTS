@@ -1,4 +1,5 @@
 use crate::entity::{Device, DeviceState, Error};
+use actix::{Message, MessageResponse};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -19,7 +20,17 @@ impl StatusResponseElement {
     }
 }
 
-pub type StatusResponse = Vec<StatusResponseElement>;
+#[derive(Default, Message, MessageResponse, Serialize)]
+#[rtype(result = "()")]
+pub struct StatusResponse {
+    data: Vec<StatusResponseElement>,
+}
+
+impl StatusResponse {
+    pub fn push(&mut self, el: StatusResponseElement) {
+        self.data.push(el)
+    }
+}
 
 pub type SwitchResponse = StatusResponse;
 

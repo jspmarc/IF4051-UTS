@@ -4,11 +4,13 @@ use crate::websocket::server::{requests::StatusRequest, WsServer};
 use crate::websocket::{constants, server};
 use actix::{
     fut, Actor, ActorContext, ActorFutureExt, Addr, AsyncContext, ContextFutureSpawner,
-    StreamHandler, WrapFuture,
+    StreamHandler, WrapFuture, Handler,
 };
 use actix_web_actors::ws;
 use log::{error, info};
 use std::time::Instant;
+
+use super::responses::StatusResponse;
 
 type WsResult = Result<ws::Message, ws::ProtocolError>;
 
@@ -45,8 +47,11 @@ impl Actor for WsSession {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.start_heartbeat(ctx);
 
+        let addr = ctx.address();
         self.server
-            .send(server::requests::ConnectRequest {})
+            .send(server::requests::ConnectRequest {
+                recipient: addr.recipient(),
+            })
             .into_actor(self)
             .then(|res, _act, ctx| {
                 match res {
@@ -167,5 +172,13 @@ impl StreamHandler<WsResult> for WsSession {
             | Ok(ws::Message::Binary(_)) => (),
             _ => ctx.stop(),
         }
+    }
+}
+
+impl Handler<StatusResponse> for WsSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: StatusResponse, ctx: &mut Self::Context) -> Self::Result {
+        ctx.text(serde_json::to_string(&msg).unwrap())
     }
 }

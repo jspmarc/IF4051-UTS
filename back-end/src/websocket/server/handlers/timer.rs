@@ -17,7 +17,7 @@ impl Handler<TimerStartRequest> for WsServer {
     fn handle(&mut self, msg: TimerStartRequest, _: &mut Self::Context) -> Self::Result {
         let state = &self.app_state;
 
-        let mut response: TimerStartResponse = vec![];
+        let mut response: TimerStartResponse = TimerStartResponse::default();
 
         let devices = msg.get_devices();
         let is_on = msg.is_on();
@@ -53,7 +53,7 @@ impl Handler<TimerStopRequest> for WsServer {
     fn handle(&mut self, msg: TimerStopRequest, _: &mut Self::Context) -> Self::Result {
         let state = &self.app_state;
 
-        let mut response: TimerStopResponse = vec![];
+        let mut response: TimerStopResponse = TimerStopResponse::default();
 
         let devices = msg.get_devices();
 

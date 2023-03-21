@@ -15,7 +15,7 @@ impl Handler<SwitchRequest> for WsServer {
     fn handle(&mut self, msg: SwitchRequest, _: &mut Self::Context) -> Self::Result {
         let state = &self.app_state;
 
-        let mut response: SwitchResponse = vec![];
+        let mut response: SwitchResponse = SwitchResponse::default();
 
         let devices = msg.get_devices();
         let is_on = msg.is_on();
