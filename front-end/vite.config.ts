@@ -7,5 +7,9 @@ export default defineConfig({
   build: {
     outDir: '../back-end/src/view',
     emptyOutDir: true,
+  },
+  server: {
+    host: '0.0.0.0',
+    strictPort: true,
   }
 })
