@@ -175,13 +175,6 @@ pub struct TimerStopRequest {
 }
 
 impl TimerStopRequest {
-    pub fn parse_args_string(args: &str) -> Result<Self, Error> {
-        match StatusRequest::parse_args_string(args) {
-            Ok(r) => Ok(Self { devices: r.devices }),
-            Err(e) => Err(e),
-        }
-    }
-
     pub fn get_devices(&self) -> &Vec<Device> {
         &self.devices
     }
