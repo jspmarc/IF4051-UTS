@@ -1,7 +1,9 @@
+use std::path::PathBuf;
+
 use actix::{Actor, Addr};
+use actix_files::NamedFile;
 use actix_web::{
-    body::MessageBody, get, http::StatusCode, middleware::Logger, web, App, HttpRequest,
-    HttpResponse, HttpServer, Responder,
+    body::MessageBody, get, middleware::Logger, web, App, HttpRequest, HttpServer, Responder,
 };
 use actix_web_actors::ws;
 use log::{error, info, warn};
@@ -29,8 +31,18 @@ async fn ws_handler(
 }
 
 #[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::new(StatusCode::NO_CONTENT)
+async fn index() -> std::io::Result<NamedFile> {
+    let path = PathBuf::from("view/index.html");
+    NamedFile::open(path)
+}
+
+#[get("/{filename:.*}")]
+async fn view(req: HttpRequest) -> std::io::Result<NamedFile> {
+    let fname = req.match_info().query("filename");
+    let mut path = PathBuf::from("view");
+    path.push(fname);
+    info!("{:?}", path);
+    NamedFile::open(path)
 }
 
 #[actix_web::main]
@@ -137,8 +149,9 @@ async fn main() -> Result<(), std::io::Error> {
         App::new()
             .app_data(web::Data::new(ws_server.clone()))
             .wrap(Logger::default())
-            .service(hello)
             .service(ws_handler)
+            .service(index)
+            .service(view)
     })
     .bind((host, port));
     if let Err(e) = server {
