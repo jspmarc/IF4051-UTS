@@ -1,35 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
+
+type DeviceStatus = {
+  name?: "Light" | "Ac";
+  status?: {
+    isOn: boolean;
+    lastTurnedOnTimestamp: number;
+    timer: {
+      isSet: boolean;
+      secondsToTrigger: number;
+      timerForTurnOn: boolean;
+    };
+  };
+  error?: string | null;
+}[];
 
 function App() {
-  const [count, setCount] = useState(0)
+  function getStatusButton() {
+    console.log("sending");
+    ws!.send("status light:ac");
+    console.log("sent");
+  }
+
+  function getUrl(): URL {
+    if (import.meta.env.DEV) {
+      return new URL("ws://localhost:8080/ws");
+    }
+
+    const url = new URL("/ws", "/localhost:8080");
+    url.protocol.replace("http", "ws");
+    return url;
+  }
+
+  const [data, setData] = useState<DeviceStatus>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+
+  useEffect(() => {
+    const ws = new WebSocket(getUrl());
+
+    ws.onopen = (ev) => {
+      console.log("connected", ev);
+      setLoading(false);
+    };
+
+    ws.onmessage = (ev) => {
+      let data = JSON.parse(ev.data) as DeviceStatus;
+      console.log(data);
+      setData(data);
+    };
+
+    setWs(ws);
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  if (loading) {
+    return <h1>Loading...</h1>;
+  }
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    <>
+      <button onClick={getStatusButton}>Press me to get new status</button>
+      <pre>{JSON.stringify(data, null, 4)}</pre>
+    </>
+  );
 }
 
-export default App
+export default App;
